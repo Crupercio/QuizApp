@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useSnackbar } from 'notistack';
+import Question from './Question';
+import Summary from './Summary';
+import Timer from './Timer';
 
 const QuizApp = () => {
   const [questions, setQuestions] = useState([]);
@@ -14,6 +18,9 @@ const QuizApp = () => {
   const [onBreak, setOnBreak] = useState(false);
   const [studySessionSet, setStudySessionSet] = useState(false);
 
+  const { enqueueSnackbar } = useSnackbar();
+
+  // Fetch questions
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -23,10 +30,10 @@ const QuizApp = () => {
         console.error('Error fetching questions:', error);
       }
     };
-
     fetchQuestions();
   }, []);
 
+  // Timer handling
   useEffect(() => {
     let timerInterval = null;
     if (isTimerRunning && timeLeft > 0) {
@@ -84,19 +91,30 @@ const QuizApp = () => {
 
     if (isCorrect) {
       setCorrectCount((prev) => prev + 1);
+      enqueueSnackbar('Correct!', { variant: 'success' });
     } else {
       setIncorrectCount((prev) => prev + 1);
+      enqueueSnackbar('Incorrect. The right answers are highlighted in green.', { variant: 'error' });
     }
+
     setShowCorrectAnswer(true);
   };
 
   const handleNextQuestion = () => {
-    setShowCorrectAnswer(false);
-    setSelectedOptions([]);
     if (currentQuestionIndex + 1 < questions.length) {
+      setShowCorrectAnswer(false);
+      setSelectedOptions([]);
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     } else {
       setShowSummary(true);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setShowCorrectAnswer(false);
+      setSelectedOptions([]);
+      setCurrentQuestionIndex((prevIndex) => prevIndex - 1);
     }
   };
 
@@ -126,11 +144,8 @@ const QuizApp = () => {
   return (
     <div className="min-h-screen bg-blue-50 p-4 md:p-8">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-blue-700">AWS Developer</h1>
-        <div className="text-lg md:text-xl text-gray-800">
-          {onBreak ? 'Break Time: ' : 'Focus Time: '}
-          {`${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`}
-        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-blue-700">AWS Developer Quiz</h1>
+        <Timer timeLeft={timeLeft} onBreak={onBreak} />
       </div>
 
       {!studySessionSet && (
@@ -151,26 +166,34 @@ const QuizApp = () => {
       )}
 
       {studySessionSet && !showSummary && currentQuestion && (
-        <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-          <div className="mb-4">
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-800">{currentQuestion.questionText}</h2>
-            <p className="text-gray-600 mt-2">
-              Question {currentQuestionIndex + 1} of {questions.length}
-            </p>
-          </div>
-          <div className="grid gap-4">
+        <div className="max-w-2xl mx-auto p-4 bg-white shadow-md rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">
+            {currentQuestion.questionText}
+          </h2>
+          <p className="text-sm text-gray-600 mb-2">
+            Question {currentQuestionIndex + 1} of {questions.length}
+          </p>
+          <p className="text-sm text-gray-600 mb-4">Hint: {currentQuestion.hint}</p>
+          <div className="space-y-2">
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => handleAnswerSelection(index)}
-                className={`py-3 px-4 w-full rounded-lg shadow transition-all duration-300 ${getButtonClass(index)}`}
+                className={`w-full py-2 px-4 rounded ${getButtonClass(index)}`}
                 disabled={showCorrectAnswer}
               >
                 {option.text}
               </button>
             ))}
           </div>
-          <div className="mt-4 text-center">
+          <div className="mt-4 flex justify-between">
+            <button
+              onClick={handlePreviousQuestion}
+              className="bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded"
+              disabled={currentQuestionIndex === 0}
+            >
+              Previous
+            </button>
             {!showCorrectAnswer ? (
               <button
                 onClick={handleSubmitAnswer}
@@ -179,39 +202,26 @@ const QuizApp = () => {
                 Submit
               </button>
             ) : (
-              <div>
-                <p className={`text-${selectedOptions.length && selectedOptions.every(index => currentQuestion.options[index].isCorrect) ? 'green' : 'red'}-600`}>
-                  {selectedOptions.length && selectedOptions.every(index => currentQuestion.options[index].isCorrect) ? 'Correct!' : 'Incorrect. The right answers are highlighted in green.'}
-                </p>
-                <button
-                  onClick={handleNextQuestion}
-                  className="bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded mt-4"
-                >
-                  Next
-                </button>
-              </div>
+              <button
+                onClick={handleNextQuestion}
+                className="bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded"
+              >
+                Next
+              </button>
             )}
           </div>
         </div>
       )}
 
       {showSummary && (
-        <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">
-          <h2 className="text-2xl font-semibold text-gray-800">Quiz Completed!</h2>
-          <p className="text-green-600">Correct answers: {correctCount}</p>
-          <p className="text-red-600">Incorrect answers: {incorrectCount}</p>
-          <button
-            onClick={handleRestartQuiz}
-            className="bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded mt-4"
-          >
-            Restart Quiz
-          </button>
-        </div>
+        <Summary
+          correctCount={correctCount}
+          incorrectCount={incorrectCount}
+          handleRestartQuiz={handleRestartQuiz}
+        />
       )}
     </div>
   );
 };
 
 export default QuizApp;
-
-

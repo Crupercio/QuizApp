@@ -1,0 +1,15 @@
+[
+    {
+      "topic": "Route 53",
+      "note": "EC2 cannot be pointed to by an Alias record. Primary record must have a health check for failover routing policy. Route 53 can register a domain, route internet traffic, and perform health checks."
+    },
+    {
+      "topic": "ELB",
+      "note": "ELB has access logs. ALB, NLB, and CloudFront support SNI. Session affinity is supported by CLB and ALB (layer 7)."
+    },
+    {
+      "topic": "API Gateway",
+      "note": "For HTTP_PROXY integration type, add HTTP headers in the request (e.g., API key). Mapping template uses Velocity Template Language (VTL). Private endpoints can only be accessed within your VPC using an Interface VPC endpoint (ENI)."
+    }
+  ]
+  

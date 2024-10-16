@@ -1,6 +1,8 @@
 import express, { request, response } from "express";
 import { PORT, mongoDB_URL } from "./config.js";
 import mongoose from "mongoose";
+import flashcards from '../frontend/public/flashcardsData.json' assert { type: 'json' };
+
 
 import questionRoutes from './routes/questionRoutes.js';
 import cors from 'cors'
@@ -41,4 +43,8 @@ mongoose
     .catch((error) => {
         console.log(error);
     });
+
+    app.get('/api/flashcards', (req, res) => {
+        res.json(flashcards);
+      });
     
