@@ -1,8 +1,7 @@
 import express, { request, response } from "express";
 import { PORT, mongoDB_URL } from "./config.js";
 import mongoose from "mongoose";
-import { Book } from "./models/bookModel.js";
-import booksRoute from "./routes/booksRoute.js";
+
 import questionRoutes from './routes/questionRoutes.js';
 import cors from 'cors'
 
